@@ -71,9 +71,9 @@
 <script type="importmap">
 {
   "imports": {
-    "react/": "https://esm.sh/react@^19.2.3/",
     "react": "https://esm.sh/react@^19.2.3",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/"
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react/": "https://esm.sh/react@^19.2.3/"
   }
 }
 </script>
@@ -156,6 +156,15 @@
                     if (!document.fullscreenElement) {
                         await containerRef.current.requestFullscreen();
                         setIsFullscreen(true);
+                        
+                        // Попытка заблокировать ориентацию в landscape
+                        if (window.screen && window.screen.orientation && window.screen.orientation.lock) {
+                            try {
+                                await window.screen.orientation.lock('landscape');
+                            } catch (e) {
+                                console.warn('Lock orientation failed', e);
+                            }
+                        }
                     } else {
                         await document.exitFullscreen();
                         setIsFullscreen(false);
@@ -173,7 +182,14 @@
             };
 
             useEffect(() => {
-                const handleFs = () => setIsFullscreen(!!document.fullscreenElement);
+                const handleFs = () => {
+                    const activeFs = !!document.fullscreenElement;
+                    setIsFullscreen(activeFs);
+                    // Разблокировка ориентации при выходе
+                    if (!activeFs && window.screen && window.screen.orientation && window.screen.orientation.unlock) {
+                        try { window.screen.orientation.unlock(); } catch (e) {}
+                    }
+                };
                 document.addEventListener('fullscreenchange', handleFs);
                 return () => document.removeEventListener('fullscreenchange', handleFs);
             }, []);
@@ -201,7 +217,7 @@
                         />
 
                         {!isPlaying && (
-                            <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-[1px] pointer-events-none">
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-[1px] pointer-events-none transition-all duration-300">
                                 <button 
                                     onClick={(e) => { e.stopPropagation(); togglePlay(); }}
                                     className="w-24 h-24 md:w-32 md:h-32 bg-red-600 rounded-full flex items-center justify-center text-white 
@@ -251,7 +267,7 @@
                     </main>
 
                     <footer className="w-full mt-10 text-center">
-                        <p className="text-white/40 text-[11px] font-bold tracking-[0.5em] uppercase">2025 • Сделано с любовью</p>
+                        <p className="text-white/40 text-[11px] font-bold tracking-[0.5em] uppercase">2026 • Сделано с любовью</p>
                     </footer>
                 </div>
             );

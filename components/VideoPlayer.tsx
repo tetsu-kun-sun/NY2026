@@ -60,6 +60,15 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src }) => {
       if (!document.fullscreenElement) {
         await containerRef.current.requestFullscreen();
         setIsFullscreen(true);
+        
+        // Автоматический поворот в альбомную ориентацию на мобильных
+        if (window.screen && window.screen.orientation && 'lock' in window.screen.orientation) {
+          try {
+            await (window.screen.orientation as any).lock('landscape');
+          } catch (e) {
+            console.warn('Ориентация не может быть заблокирована:', e);
+          }
+        }
       } else {
         await document.exitFullscreen();
         setIsFullscreen(false);
@@ -67,16 +76,6 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src }) => {
     } catch (err) {
       console.error('Ошибка полноэкранного режима:', err);
     }
-  };
-
-  const handleSeek = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!videoRef.current || !duration) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const clickedPercentage = x / rect.width;
-    const newTime = clickedPercentage * duration;
-    videoRef.current.currentTime = newTime;
-    setCurrentTime(newTime);
   };
 
   const requestWakeLock = useCallback(async () => {
@@ -97,7 +96,15 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src }) => {
 
   useEffect(() => {
     const handleFullscreenChange = () => {
-      setIsFullscreen(!!document.fullscreenElement);
+      const activeFs = !!document.fullscreenElement;
+      setIsFullscreen(activeFs);
+      
+      // Разблокировка ориентации при выходе из полноэкранного режима
+      if (!activeFs && window.screen && window.screen.orientation && 'unlock' in window.screen.orientation) {
+        try {
+          window.screen.orientation.unlock();
+        } catch (e) {}
+      }
     };
     document.addEventListener('fullscreenchange', handleFullscreenChange);
     return () => {
@@ -118,6 +125,16 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src }) => {
   };
 
   const progressPercentage = duration ? (currentTime / duration) * 100 : 0;
+
+  const handleSeek = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!videoRef.current || !duration) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const clickedPercentage = x / rect.width;
+    const newTime = clickedPercentage * duration;
+    videoRef.current.currentTime = newTime;
+    setCurrentTime(newTime);
+  };
 
   return (
     <div className="w-full flex flex-col items-center">
