@@ -25,7 +25,7 @@ const App: React.FC = () => {
 
       <footer className="w-full mt-10 text-center">
           <p className="text-white/40 text-[11px] font-bold tracking-[0.5em] uppercase">
-            2025 • Сделано с любовью
+            2026 • Сделано с любовью
           </p>
       </footer>
     </div>
